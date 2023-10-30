@@ -1,5 +1,5 @@
-import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
@@ -16,6 +16,117 @@ public class Main {
         for (Token token : tokens) {
             System.out.println(token.toString());
         }
+
+//        infix(tokens);
+        postfix(tokens);
+    }
+
+    public static void postfix(ArrayList<Token> tokens) {
+        ArrayList<String> postfix = new ArrayList<>();
+
+        for (Token token : tokens) {
+            postfix.add(token.lexeme);
+
+            if (
+                token.type == Type.ADDITION ||
+                token.type == Type.SUBTRACTION ||
+                token.type == Type.MULTIPLICATION ||
+                token.type == Type.DIVISION
+            ) {
+                double firstOperand = Double.parseDouble(postfix.get(postfix.size() - 3));
+                double secondOperand = Double.parseDouble(postfix.get(postfix.size() - 2));
+                String operator = postfix.get(postfix.size() - 1);
+
+                System.out.println(firstOperand + " " + operator + " " + secondOperand);
+
+                postfix.subList(postfix.size() - 3, postfix.size()).clear();
+
+                doOperation(postfix, firstOperand, secondOperand, operator);
+            }
+        }
+
+        System.out.println("Postfix: " + postfix);
+    }
+
+    public static void infix(ArrayList<Token> tokens) {
+        ArrayList<String> infix = new ArrayList<>();
+
+        for (Token token : tokens) {
+            infix.add(token.lexeme);
+
+            if (token.type == Type.CLOSE_PAREN) {
+                double firstOperand = Double.parseDouble(infix.get(infix.size() - 4));
+                double secondOperand = Double.parseDouble(infix.get(infix.size() - 2));
+                String operator = infix.get(infix.size() - 3);
+
+                infix.subList(infix.size() - 5, infix.size()).clear();
+
+                doOperation(infix, firstOperand, secondOperand, operator);
+            }
+        }
+
+        while (infix.size() > 1) {
+            int opIndex;
+
+            if (infix.contains("/")) {
+                opIndex = infix.indexOf("/");
+                double firstOperand = Double.parseDouble(infix.get(opIndex - 1));
+                double secondOperand = Double.parseDouble(infix.get(opIndex + 1));
+
+                infix.subList(opIndex - 1, opIndex + 2).clear();
+
+                infix.add(opIndex - 1, String.valueOf(firstOperand / secondOperand));
+                continue;
+            }
+
+            if (infix.contains("*")) {
+                opIndex = infix.indexOf("*");
+
+                double firstOperand = Double.parseDouble(infix.get(opIndex - 1));
+                double secondOperand = Double.parseDouble(infix.get(opIndex + 1));
+
+                infix.subList(opIndex - 1, opIndex + 2).clear();
+
+                infix.add(opIndex - 1, String.valueOf(firstOperand * secondOperand));
+                continue;
+            }
+
+            if (infix.contains("+")) {
+                opIndex = infix.indexOf("+");
+
+                double firstOperand = Double.parseDouble(infix.get(opIndex - 1));
+                double secondOperand = Double.parseDouble(infix.get(opIndex + 1));
+
+                infix.subList(opIndex - 1, opIndex + 2).clear();
+
+                infix.add(opIndex - 1, String.valueOf(firstOperand + secondOperand));
+                continue;
+            }
+
+            if (infix.contains("-")) {
+                opIndex = infix.indexOf("-");
+
+                double firstOperand = Double.parseDouble(infix.get(opIndex - 1));
+                double secondOperand = Double.parseDouble(infix.get(opIndex + 1));
+
+                infix.subList(opIndex - 1, opIndex + 2).clear();
+
+                infix.add(opIndex - 1, String.valueOf(firstOperand - secondOperand));
+            }
+        }
+
+        System.out.println("Infix: " + infix);
+    }
+
+    private static void doOperation(
+            ArrayList<String> array, double firstOperand, double secondOperand, String operator
+    ) {
+        switch (operator) {
+            case "+" -> array.add(String.valueOf(firstOperand + secondOperand));
+            case "-" -> array.add(String.valueOf(firstOperand - secondOperand));
+            case "*" -> array.add(String.valueOf(firstOperand * secondOperand));
+            case "/" -> array.add(String.valueOf(firstOperand / secondOperand));
+        }
     }
 
     public static void lex() {
@@ -28,11 +139,6 @@ public class Main {
 
             switch (state) {
                 case 0 -> {
-//                    if (isFinal()) {
-//                        currentLexeme.append(c);
-//                        tokens.add(new Token(currentLexeme.toString(), Type.INTEGER));
-//                        lx.current++;
-//                    } else
                     if (isOpenParenthesis(c)) {
                         currentLexeme.append(c);
                         state = 15;
@@ -58,8 +164,12 @@ public class Main {
                             state = 2;
                             break;
                         }
+                        if (isDecimalPoint(next)) {
+                            lx.current++;
+                            break;
+                        }
                         lx.current++;
-                        currentLexeme.append(c);
+                        currentLexeme.append(input.charAt(lx.current));
                     } else if (isDecimalPoint(c)) {
                         currentLexeme.append(c);
                         state = 3;
@@ -79,7 +189,6 @@ public class Main {
                     if (isDigit(c)) {
                         currentLexeme.append(c);
                         state = 4;
-                        lx.current++;
                     } else {
                         state = 0;
                         tokens.add(new Token("ERROR", Type.ERROR));
@@ -87,11 +196,12 @@ public class Main {
                 }
                 case 4 -> {
                     if (isDigit(c)) {
-                        currentLexeme.append(c);
-                        if (isEmptySpace(next)) {
+                        if (isEmptySpace(next) || input.charAt(lx.current + 1) == ' ') {
                             state = 5;
+                            break;
                         }
                         lx.current++;
+                        currentLexeme.append(c);
                     } else {
                         state = 0;
                         tokens.add(new Token("ERROR", Type.ERROR));
@@ -243,9 +353,5 @@ public class Main {
 
     public static boolean isCloseParenthesis(char c) {
         return c == ')';
-    }
-
-    public static boolean isFinal() {
-        return lx.current == input.length() - 1;
     }
 }
