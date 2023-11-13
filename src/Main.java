@@ -4,34 +4,63 @@ import java.util.Scanner;
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final Lexer lx = new Lexer();
-    private static final ArrayList<Token> tokens = new ArrayList<>();
-    private static String input;
+//    private static final ArrayList<Token> tokens = new ArrayList<>();
 
     public static void main(String[] args) {
-        System.out.print("Insira uma expressão matemática, lembre de adicionar espaços após números \nparênteses e operadores: ");
-        input = scanner.nextLine();
-        input += ' ';
+        while (true) {
+            int res;
+            String input;
 
-        lex();
-        for (Token token : tokens) {
-            System.out.println(token.toString());
+            System.out.println("1 - Infixa");
+            System.out.println("2 - Posfixa");
+            System.out.println("3 - Sair");
+
+            System.out.print("Escolha uma opção: ");
+            res = scanner.nextInt();
+
+            switch (res) {
+                case 1: {
+                    System.out.print(
+                            "Insira uma expressão matemática, lembre de adicionar espaços após números" +
+                                    " \nparênteses e operadores: "
+                    );
+                    input = scanner.nextLine();
+
+                    ArrayList<Token> tokens = lex(input);
+
+                    infix(tokens);
+                    break;
+                }
+                case 2: {
+                    System.out.print(
+                            "Insira uma expressão matemática, lembre de adicionar espaços após números" +
+                                    " \nparênteses e operadores: "
+                    );
+                    input = scanner.nextLine();
+
+                    ArrayList<Token> tokens = lex(input);
+
+                    postfix(tokens);
+                    break;
+                }
+                case 3: {
+                    System.exit(0);
+                }
+            }
         }
-
-//        infix(tokens);
-        postfix(tokens);
     }
 
-    public static void postfix(ArrayList<Token> tokens) {
+    public static String postfix(ArrayList<Token> tokens) {
         ArrayList<String> postfix = new ArrayList<>();
 
         for (Token token : tokens) {
             postfix.add(token.lexeme);
 
             if (
-                token.type == Type.ADDITION ||
-                token.type == Type.SUBTRACTION ||
-                token.type == Type.MULTIPLICATION ||
-                token.type == Type.DIVISION
+                    token.type == Type.ADDITION ||
+                            token.type == Type.SUBTRACTION ||
+                            token.type == Type.MULTIPLICATION ||
+                            token.type == Type.DIVISION
             ) {
                 double firstOperand = Double.parseDouble(postfix.get(postfix.size() - 3));
                 double secondOperand = Double.parseDouble(postfix.get(postfix.size() - 2));
@@ -46,9 +75,10 @@ public class Main {
         }
 
         System.out.println("Postfix: " + postfix);
+        return postfix.get(0);
     }
 
-    public static void infix(ArrayList<Token> tokens) {
+    public static String infix(ArrayList<Token> tokens) {
         ArrayList<String> infix = new ArrayList<>();
 
         for (Token token : tokens) {
@@ -116,6 +146,7 @@ public class Main {
         }
 
         System.out.println("Infix: " + infix);
+        return infix.get(0);
     }
 
     private static void doOperation(
@@ -129,8 +160,9 @@ public class Main {
         }
     }
 
-    public static void lex() {
+    public static ArrayList<Token> lex(String input) {
         int state = 0;
+        ArrayList<Token> tokens = new ArrayList<>();
         StringBuilder currentLexeme = new StringBuilder();
 
         while (lx.current < input.length()) {
@@ -313,6 +345,7 @@ public class Main {
                 }
             }
         }
+        return tokens;
     }
 
     public static boolean isDigit(char c) {
@@ -340,7 +373,7 @@ public class Main {
     }
 
     public static boolean isEmptySpace(char c) {
-        return (c == ' '|| c == '\t' || c == '\n' || c == '\r');
+        return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
     }
 
     public static boolean isDecimalPoint(char c) {
